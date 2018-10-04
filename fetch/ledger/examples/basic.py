@@ -10,25 +10,26 @@ class WalletApiExample(object):
     def __init__(self, host, port):
         self._api = WalletApi(host, port, 2)
 
-    def _register(self):
-        address = self._api.register()
+    def _register(self, number_of_identities=1):
+        addresses = self._api.register(number_of_identities=number_of_identities)
 
-        if address is None:
-            raise RuntimeError('Unable to request address from wallet API')
+        if addresses is None:
+            raise RuntimeError('Unable to request addresses from wallet API')
 
-        # wait for a positive balance to be created (sort of backed into the contract)
-        balance = 0
-        for n in range(self.MAX_ITERATIONS):
-            balance = self._balance(address)
-            if balance > 0:
-                break
+        for address in addresses:
+            # wait for a positive balance to be created (sort of backed into the contract)
+            balance = 0
+            for n in range(self.MAX_ITERATIONS):
+                balance = self._balance(address)
+                if balance > 0:
+                    break
 
-            time.sleep(self.ITERATION_PERIOD_SECS)
+                time.sleep(self.ITERATION_PERIOD_SECS)
 
-        if balance == 0:
-            raise RuntimeError('Failed to generate a balance from the registered account')
+            if balance == 0:
+                raise RuntimeError('Failed to generate a balance from the registered account')
 
-        return address
+        return addresses
 
     def _balance(self, address):
         if address is None:
@@ -57,33 +58,31 @@ class WalletApiExample(object):
 
 
 class SimpleBalanceRequest(WalletApiExample):
-    def run(self):
+    def run(self, number_of_identities=1):
         # register with the ledger for an address
-        address = self._register()
+        addresses = self._register(number_of_identities=number_of_identities)
 
-        # check that we have been given a "valid" address
-        balance = self._balance(address)
-
-        print('Balance for address: {} is {}'.format(address, balance))
+        for address in addresses:
+            # check that we have been given a "valid" address
+            balance = self._balance(address)
+            print('Balance for address: {} is {}'.format(address, balance))
 
 
 class SimpleTransferExchange(WalletApiExample):
     def run(self):
         # register with the ledger for an address
-        address1 = self._register()
-        address2 = self._register()
+        addresses = self._register(number_of_identities=2)
 
-        # get the balances for the different accounts
-        balance1 = self._balance(address1)
-        balance2 = self._balance(address2)
+        for address in addresses:
+            # get the balances for the different accounts
+            balance = self._balance(address)
 
-        assert balance1 >= 1
+            assert balance >= 1
 
-        transfer_amount = max(balance1 // 10, 1)
+            transfer_amount = max(balance // 10, 1)
 
-        # determine the expected balances
-        expected_balance1 = balance1 - transfer_amount
-        expected_balance2 = balance2 + transfer_amount
+            # determine the expected balances
+            expected_balance = balance - transfer_amount
 
         # wait until the balances match
 

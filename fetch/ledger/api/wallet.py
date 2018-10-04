@@ -14,10 +14,17 @@ class WalletApi(ApiEndpoint):
         else:
             assert False
 
-    def register(self):
-        success, data = self._post(self.api_prefix + 'register')
-        if success and 'address' in data:
-            return data['address']
+    def register(self, number_of_identities=1):
+        req_data = {}
+        if number_of_identities > 1:
+            req_data["count"] = number_of_identities
+
+        success, resp_data = self._post(self.api_prefix + 'register', data=req_data)
+        if success:
+            if 'address' in resp_data:
+                return [resp_data['address']]
+            elif 'addresses' in resp_data:
+                return resp_data['addresses']
 
     def balance(self, address):
         request = {
